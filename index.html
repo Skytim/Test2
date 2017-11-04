@@ -118,7 +118,7 @@
                     if (!localStorage.getItem(continent)) {
                         $.ajax({
                             type: 'get',
-                            url: 'http://api.geonames.org/searchJSON?username=sky22357168&continentCode=' + continent,
+                            url: 'https://api.geonames.org/searchJSON?username=sky22357168&continentCode=' + continent,
                             cache: true,
                             success: function (data) {
                                 for (i = 0; i < data.geonames.length; i++) {
@@ -170,7 +170,7 @@
                     if (!localStorage.getItem(value.countryCode)) {
                         $.ajax({
                             type: 'get',
-                            url: 'http://api.geonames.org/searchJSON?username=sky22357168&country=' + value.countryCode,
+                            url: 'https://api.geonames.org/searchJSON?username=sky22357168&country=' + value.countryCode,
                             success: function (data) {
                                 for (i = 0; i < data.geonames.length; i++) {
 
