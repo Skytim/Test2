@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<head>
+    <title>HTML/Javascript Test</title>
+
+
+
+
+</head>
+
+<body>
+
+
+    <h2>
+        Your implemetation</h2>
+    <table>
+
+        <tr>
+            <td>
+                Continent
+            </td>
+            <td>
+                <input type="checkbox" value="AF" checked="checked" data-bind="checked: selectContinent" />Africa
+                <input type="checkbox" value="AS" data-bind="checked: selectContinent" />Asia
+                <input type="checkbox" value="EU" data-bind="checked: selectContinent" />Europe
+                <input type="checkbox" value="NA" data-bind="checked: selectContinent" />North American
+                <br />
+                <input type="checkbox" value="OC" data-bind="checked: selectContinent" />Oceania
+                <input type="checkbox" value="SA" data-bind="checked: selectContinent" />South American
+                <input type="checkbox" value="AN" data-bind="checked: selectContinent" />Anetatika
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Country
+            </td>
+            <td>
+                <select data-bind="options: availableCountries,
+                                                    optionsText: 'countryName',
+                                                    value: selectedCountry,
+                                                    optionsCaption: 'Choose...'"></select>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+                City
+            </td>
+            <td>
+
+                <select data-bind="options: availableCities,
+                                    optionsText: 'cityName',
+                                    value: selectedCity,
+                                    optionsCaption: 'Choose...'"></select>
+            </td>
+        </tr>
+
+        <tr>
+            <td colspan="2" height="20px">
+                &nbsp;
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <b>Special Notes</b>
+                <br />
+                <i>Please leave your comment or any explanation here for any thing that you want to return back to us.</i>
+                <ol>
+                    <li>comment #1</li>
+                    <li>comment #2</li>
+                    <li>comment #3</li>
+                    <li>comment #4</li>
+                    <li>etc...</li>
+                </ol>
+            </td>
+        </tr>
+
+    </table>
+    <div id="loadingIMG" style="display:none">
+        <img src="loading.gif" height="14" /> LOADING PLEASE WAIT
+    </div>
+
+</body>
+
+</html>
+<script src="knockout.js"></script>
+<script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
+    crossorigin="anonymous"></script>
+<script type="text/javascript">
+    $(document).ready(function () {
+
+
+
+        var Country = function (name, countryCode) {
+            this.countryName = name;
+            this.countryCode = countryCode;
+        };
+        var City = function (name) {
+            this.cityName = name;
+        };
+        function viewModel() {
+            var self = this;
+            self.availableCountries = ko.observableArray();
+            self.availableCities = ko.observableArray();
+            self.selectedCountry = ko.observable();
+            self.selectedCity = ko.observable();
+            self.selectContinent = ko.observableArray();
+            ko.computed(function () {
+                var finalData = [];
+                var finalData2 = [];
+              
+                self.availableCountries([]);
+               
+                for (i = 0; i < self.selectContinent().length; i++) {
+                    debugger;
+                    var continent = self.selectContinent()[i];
+                    if (!localStorage.getItem(continent)) {
+                        $.ajax({
+                            type: 'get',
+                            url: 'http://api.geonames.org/searchJSON?username=sky22357168&continentCode=' + continent,
+                            cache: true,
+                            success: function (data) {
+                                for (i = 0; i < data.geonames.length; i++) {
+
+                                    if (data.geonames[i].countryName) {
+                                        finalData.push(data.geonames[i].countryName);
+                                    }
+                                }
+                                finalData.sort();
+                                var uniqueCountry = [];
+                                var uniq = finalData.reduce(function (a, b) {
+                                    if (a.indexOf(b) < 0) a.push(b);
+                                    return a;
+                                }, []);
+                                for (i = 0; i < uniq.length; i++) {
+                                    for (j = 0; j < data.geonames.length; j++) {
+                                        if (uniq[i] === data.geonames[j].countryName) {
+                                            finalData2.push(new Country(uniq[i], data.geonames[j].countryCode));
+                                            self.availableCountries.push(new Country(uniq[i], data.geonames[j].countryCode));
+                                            break;
+                                        }
+
+                                    }
+                                }
+                                debugger;
+                                localStorage.setItem(continent, JSON.stringify(self.availableCountries()));
+
+                            },
+                            beforeSend: function () {
+                                $("#loadingIMG").show();
+                            },
+                            complete: function () {
+                                $("#loadingIMG").hide();
+                            }
+                        });
+                    }
+                    else {
+
+                        for (var h = 0; h < JSON.parse(localStorage[continent]).length; h++) {
+                            var data = JSON.parse(localStorage[continent])[h];
+                            self.availableCountries.push(new Country(data.countryName, data.countryCode));
+                        }
+                    }
+                }
+            });
+            self.selectedCountry.subscribe(function (value) {
+                self.availableCities([]);
+                if (value != undefined) {
+                    if (!localStorage.getItem(value.countryCode)) {
+                        $.ajax({
+                            type: 'get',
+                            url: 'http://api.geonames.org/searchJSON?username=sky22357168&country=' + value.countryCode,
+                            success: function (data) {
+                                for (i = 0; i < data.geonames.length; i++) {
+
+                                    if (data.geonames[i].toponymName) {
+                                        self.availableCities.push(new City(data.geonames[i].toponymName));
+                                    }
+                                }
+                                localStorage.setItem(value.countryCode, JSON.stringify(self.availableCities()));
+                            },
+                            beforeSend: function () {
+                                $("#loadingIMG").show();
+                            },
+                            complete: function () {
+                                $("#loadingIMG").hide();
+                            }
+                        });
+                    }
+                    else {
+                        debugger;
+                        for (var h = 0; h < JSON.parse(localStorage[value.countryCode]).length; h++) {
+                            var data = JSON.parse(localStorage[value.countryCode])[h];
+                            self.availableCities.push(new City(data.cityName));
+                        }
+                    }
+                }
+            });
+
+        };
+        var vm = new viewModel();
+        ko.applyBindings(vm);
+
+    });
+
+</script>
